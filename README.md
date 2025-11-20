@@ -10,6 +10,7 @@ A comprehensive multi-cloud cost tracking and analytics platform that helps you 
 ### Core Functionality
 - **Multi-Cloud Support**: Track costs across AWS, Azure, and GCP in a unified dashboard
 - **Real-time Monitoring**: Live cost tracking with automatic data aggregation
+- **Budget Planning**: Set monthly budgets, track spending, and receive forecasts
 - **Cost Alerts**: Set custom thresholds and receive warnings when spending exceeds limits
 - **Advanced Analytics**: Comprehensive visualizations powered by D3.js and Recharts
 
@@ -29,6 +30,14 @@ A comprehensive multi-cloud cost tracking and analytics platform that helps you 
 - **Gauge Chart**: Visual budget threshold usage indicator
 - **Anomaly Detection**: Automatic detection of unusual spending patterns
 - **Sortable Table**: Detailed breakdown with provider, service, cost, % change, and severity tags
+
+#### Budget Planning Dashboard
+- **Budget Management**: Set and update monthly spending budgets
+- **Spending Metrics**: Track current spend, remaining balance, and forecasted end-of-month costs
+- **Progress Visualization**: Color-coded progress bar (green/yellow/red based on consumption)
+- **Service Breakdown**: Detailed table showing daily spend and monthly projections per service
+- **Budget Alerts**: Automatic warnings when spending exceeds 80% of budget
+- **Real-time Forecasting**: Predict end-of-month spending based on current trends
 
 ### Cloud Provider Integration
 - **AWS Cost Explorer**: Fetch real-time cost data from AWS
@@ -165,6 +174,14 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 | amount | Float | Alert threshold amount |
 | updated_at | DateTime | Last update timestamp |
 
+### Budget
+| Field | Type | Description |
+|-------|------|-------------|
+| id | Integer | Primary key |
+| amount | Float | Monthly budget amount |
+| created_at | DateTime | Budget creation timestamp |
+| updated_at | DateTime | Last update timestamp |
+
 ## 🔌 API Endpoints
 
 ### Costs
@@ -174,6 +191,12 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 ### Alerts
 - `GET /alerts` - Get current alert threshold
 - `POST /alerts` - Set/update alert threshold
+
+### Budget
+- `GET /budget` - Get current budget with spending data and projections
+  - Returns: budget amount, current spend, remaining balance, forecasted spend, percentage used, and service-level projections
+- `POST /budget` - Set or update monthly budget
+  - Body: `{"amount": 5000}`
 
 ## 🌐 Cloud Provider Integration
 
@@ -220,6 +243,14 @@ Uses historical data to predict future spending trends:
 - 7-day prediction window
 - Confidence intervals displayed
 
+### Budget Planning
+- Set monthly spending budgets
+- Track current spend vs budget in real-time
+- View remaining balance and forecasted end-of-month costs
+- Service-level spending projections with color-coded status
+- Automatic warnings at 80% budget consumption
+- Daily spend tracking with monthly projections
+
 ### Cost Alerts
 - Set custom spending thresholds
 - Visual warnings when limits are exceeded
@@ -254,7 +285,8 @@ cloud-cost-insight/
 │   ├── routers/
 │   │   ├── __init__.py
 │   │   ├── costs.py
-│   │   └── alerts.py
+│   │   ├── alerts.py
+│   │   └── budget.py
 │   ├── __init__.py
 │   ├── database.py
 │   ├── models.py
@@ -272,7 +304,10 @@ cloud-cost-insight/
 │   ├── app/
 │   │   ├── components/
 │   │   │   ├── Dashboard.tsx
-│   │   │   └── AdvancedDashboard.tsx
+│   │   │   ├── AdvancedDashboard.tsx
+│   │   │   └── Sidebar.tsx
+│   │   ├── budget/
+│   │   │   └── page.tsx
 │   │   ├── api.ts
 │   │   ├── layout.tsx
 │   │   └── page.tsx
@@ -333,8 +368,7 @@ Project Link: [https://github.com/salaam7860/cloud_cost_project](https://github.
 - [ ] Add export functionality (CSV, PDF reports)
 - [ ] Create mobile app
 - [ ] Add Slack/Email notifications
-- [ ] Implement budget planning features
-- [ ] Add more cloud providers (Oracle Cloud, IBM Cloud)
+- [x] Implement budget planning features
 - [ ] Create cost allocation by teams/departments
 - [ ] Add custom tagging and filtering
 - [ ] Implement role-based access control (RBAC)

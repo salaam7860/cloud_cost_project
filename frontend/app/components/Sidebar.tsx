@@ -15,9 +15,10 @@ interface SidebarProps {
 export default function Sidebar({ activeView, onViewChange, onAlertClick }: SidebarProps) {
     const menuItems = [
         { id: 'dashboard', label: 'Dashboard', icon: Home },
-        { id: 'aws', label: 'AWS Breakdown', icon: FaAws },
-        { id: 'azure', label: 'Azure Breakdown', icon: Cloud },
-        { id: 'gcp', label: 'GCP Breakdown', icon: SiGooglecloud },
+        { id: 'budget', label: 'Budget Planning', icon: DollarSign },
+        { id: 'aws', label: 'AWS', icon: FaAws },
+        { id: 'azure', label: 'Azure', icon: Cloud },
+        { id: 'gcp', label: 'GCP', icon: SiGooglecloud },
         { id: 'analytics', label: 'Advanced Analytics', icon: BarChart3 },
     ];
 

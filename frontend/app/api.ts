@@ -47,3 +47,49 @@ export async function setAlertThreshold(amount: number): Promise<AlertThreshold>
   }
   return res.json();
 }
+
+export interface Budget {
+  id: number;
+  amount: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ServiceProjection {
+  service: string;
+  daily_spend: number;
+  monthly_projection: number;
+  status: string;
+}
+
+export interface BudgetResponse {
+  budget: Budget | null;
+  current_spend: number;
+  remaining: number;
+  forecasted_spend: number;
+  percentage_used: number;
+  services: ServiceProjection[];
+}
+
+export async function fetchBudget(): Promise<BudgetResponse> {
+  const res = await fetch(`${API_URL}/budget/`);
+  if (!res.ok) {
+    throw new Error('Failed to fetch budget');
+  }
+  return res.json();
+}
+
+export async function setBudget(amount: number): Promise<Budget> {
+  const res = await fetch(`${API_URL}/budget/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ amount }),
+  });
+  if (!res.ok) {
+    throw new Error('Failed to set budget');
+  }
+  return res.json();
+}
+

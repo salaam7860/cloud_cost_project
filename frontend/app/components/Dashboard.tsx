@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { fetchCosts, fetchAlertThreshold, setAlertThreshold, CostEntry, AlertThreshold } from '../api';
+import { useRouter } from 'next/navigation';
+import { fetchCosts, fetchAlertThreshold, setAlertThreshold, fetchBudget, CostEntry, AlertThreshold, BudgetResponse } from '../api';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Bell, DollarSign, TrendingUp, X } from 'lucide-react';
 import Sidebar from './Sidebar';
@@ -10,8 +11,10 @@ import AdvancedDashboard from './AdvancedDashboard';
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
 
 export default function DashboardWithSidebar() {
+    const router = useRouter();
     const [costs, setCosts] = useState<CostEntry[]>([]);
     const [alertThreshold, setAlertThresholdState] = useState<AlertThreshold | null>(null);
+    const [budgetData, setBudgetData] = useState<BudgetResponse | null>(null);
     const [newThreshold, setNewThreshold] = useState<string>('');
     const [totalCost, setTotalCost] = useState(0);
     const [loading, setLoading] = useState(true);
@@ -28,6 +31,14 @@ export default function DashboardWithSidebar() {
 
                 const total = costsData.reduce((acc, curr) => acc + curr.cost, 0);
                 setTotalCost(total);
+
+                // Fetch budget data
+                try {
+                    const budget = await fetchBudget();
+                    setBudgetData(budget);
+                } catch (error) {
+                    console.error('Failed to load budget:', error);
+                }
             } catch (error) {
                 console.error('Failed to load data:', error);
             } finally {
@@ -46,6 +57,14 @@ export default function DashboardWithSidebar() {
             setShowAlertModal(false);
         } catch (error) {
             console.error('Failed to set alert:', error);
+        }
+    };
+
+    const handleViewChange = (view: string) => {
+        if (view === 'budget') {
+            router.push('/budget');
+        } else {
+            setActiveView(view);
         }
     };
 
@@ -135,7 +154,7 @@ export default function DashboardWithSidebar() {
             {/* Sidebar */}
             <Sidebar
                 activeView={activeView}
-                onViewChange={setActiveView}
+                onViewChange={handleViewChange}
                 onAlertClick={() => setShowAlertModal(true)}
             />
 
@@ -175,6 +194,14 @@ export default function DashboardWithSidebar() {
                             <div className="bg-red-900 border-l-4 border-red-500 text-red-200 p-4" role="alert">
                                 <p className="font-bold">Warning</p>
                                 <p>Your total spending (${totalCost.toFixed(2)}) has exceeded your alert threshold of ${alertThreshold?.amount}.</p>
+                            </div>
+                        )}
+
+                        {/* Budget Warning Banner */}
+                        {budgetData && budgetData.budget && budgetData.percentage_used >= 80 && (
+                            <div className="bg-amber-900 border-l-4 border-amber-500 text-amber-200 p-4 rounded-lg" role="alert">
+                                <p className="font-bold">⚠ Budget nearing limit — Consider optimizing resources.</p>
+                                <p>You've used {budgetData.percentage_used.toFixed(1)}% of your monthly budget (${budgetData.current_spend.toFixed(2)} / ${budgetData.budget.amount}).</p>
                             </div>
                         )}
 

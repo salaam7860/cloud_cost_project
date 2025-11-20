@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import engine, Base
-from .routers import costs, alerts
+from .routers import costs, alerts, budget
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -19,6 +19,7 @@ app.add_middleware(
 
 app.include_router(costs.router)
 app.include_router(alerts.router)
+app.include_router(budget.router)
 
 @app.get("/")
 def read_root():
