@@ -1,20 +1,55 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import * as d3 from 'd3';
 import { fetchCosts, CostEntry } from '../api';
+import {
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    Legend,
+    ResponsiveContainer,
+    LineChart,
+    Line,
+    PieChart,
+    Pie,
+    Cell,
+    Area,
+    AreaChart,
+    ComposedChart
+} from 'recharts';
+
+// Professional FinOps Color Palette
+const COLORS = {
+    AWS: '#FF9900',       // AWS Orange
+    Azure: '#0078D4',     // Azure Blue
+    GCP: '#34A853',       // GCP Green
+
+    // Environment Colors
+    Prod: '#EF4444',      // Red
+    Stage: '#F59E0B',     // Amber
+    Dev: '#10B981',       // Emerald
+    Test: '#3B82F6',      // Blue
+
+    // UI Colors
+    Background: '#0F172A', // Slate 900
+    CardBg: '#1E293B',     // Slate 800
+    TextPrimary: '#F8FAFC', // Slate 50
+    TextSecondary: '#94A3B8', // Slate 400
+    Border: '#334155',     // Slate 700
+    Grid: '#334155',       // Slate 700
+
+    // Gauge
+    GaugeTrack: '#334155',
+    GaugeFill: '#6366F1'   // Indigo
+};
 
 export default function AdvancedDashboard() {
     const [costs, setCosts] = useState<CostEntry[]>([]);
     const [loading, setLoading] = useState(true);
-
-    // Refs for D3 charts
-    const barChartRef = useRef<HTMLDivElement>(null);
-    const stackedBarRef = useRef<HTMLDivElement>(null);
-    const forecastRef = useRef<HTMLDivElement>(null);
-    const heatmapRef = useRef<HTMLDivElement>(null);
-    const donutRef = useRef<HTMLDivElement>(null);
-    const gaugeRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         async function loadData() {
@@ -30,681 +65,269 @@ export default function AdvancedDashboard() {
         loadData();
     }, []);
 
-    useEffect(() => {
-        if (!loading && costs.length > 0) {
-            renderBarChart();
-            renderStackedBarChart();
-            renderForecastChart();
-            renderHeatmap();
-            renderDonutChart();
-            renderGaugeChart();
-        }
-    }, [loading, costs]);
-
-    const renderBarChart = () => {
-        if (!barChartRef.current) return;
-
-        const container = d3.select(barChartRef.current);
-        container.selectAll('*').remove();
-
-        // Aggregate costs by service
-        const serviceData = d3.rollup(
-            costs,
-            v => d3.sum(v, d => d.cost),
-            d => d.service
-        );
-
-        const data = Array.from(serviceData, ([service, cost]) => ({ service, cost }))
-            .sort((a, b) => b.cost - a.cost)
-            .slice(0, 10);
-
-        const margin = { top: 20, right: 30, bottom: 60, left: 60 };
-        const width = 600 - margin.left - margin.right;
-        const height = 300 - margin.top - margin.bottom;
-
-        const svg = container.append('svg')
-            .attr('width', width + margin.left + margin.right)
-            .attr('height', height + margin.top + margin.bottom)
-            .append('g')
-            .attr('transform', `translate(${margin.left},${margin.top})`);
-
-        const x = d3.scaleBand()
-            .range([0, width])
-            .domain(data.map(d => d.service))
-            .padding(0.2);
-
-        const y = d3.scaleLinear()
-            .domain([0, d3.max(data, d => d.cost) || 0])
-            .range([height, 0]);
-
-        svg.selectAll('.bar')
-            .data(data)
-            .enter()
-            .append('rect')
-            .attr('class', 'bar')
-            .attr('x', d => x(d.service) || 0)
-            .attr('y', d => y(d.cost))
-            .attr('width', x.bandwidth())
-            .attr('height', d => height - y(d.cost))
-            .attr('fill', '#F59E0B')
-            .attr('rx', 4);
-
-        svg.append('g')
-            .attr('transform', `translate(0,${height})`)
-            .call(d3.axisBottom(x))
-            .selectAll('text')
-            .attr('transform', 'rotate(-45)')
-            .style('text-anchor', 'end')
-            .style('fill', '#4B5563');
-
-        svg.selectAll('.domain, .tick line')
-            .style('stroke', '#4B5563');
-
-        svg.append('g')
-            .call(d3.axisLeft(y).tickFormat(d => `$${d}`))
-            .selectAll('text')
-            .style('fill', '#4B5563');
-
-        svg.selectAll('.domain, .tick line')
-            .style('stroke', '#4B5563');
-    };
-
-    const renderStackedBarChart = () => {
-        if (!stackedBarRef.current) return;
-
-        const container = d3.select(stackedBarRef.current);
-        container.selectAll('*').remove();
-
-        // Group by service and provider
-        const grouped = d3.rollup(
-            costs,
-            v => d3.sum(v, d => d.cost),
-            d => d.service,
-            d => d.provider
-        );
-
-        const services = Array.from(grouped.keys()).slice(0, 8);
-        const providers = ['AWS', 'Azure', 'GCP'];
-
-        const data = services.map(service => {
-            const obj: any = { service };
-            providers.forEach(provider => {
-                obj[provider] = grouped.get(service)?.get(provider) || 0;
-            });
-            return obj;
-        });
-
-        const margin = { top: 20, right: 100, bottom: 60, left: 60 };
-        const width = 600 - margin.left - margin.right;
-        const height = 300 - margin.top - margin.bottom;
-
-        const svg = container.append('svg')
-            .attr('width', width + margin.left + margin.right)
-            .attr('height', height + margin.top + margin.bottom)
-            .append('g')
-            .attr('transform', `translate(${margin.left},${margin.top})`);
-
-        const x = d3.scaleBand()
-            .domain(services)
-            .range([0, width])
-            .padding(0.2);
-
-        const y = d3.scaleLinear()
-            .domain([0, d3.max(data, d => providers.reduce((sum, p) => sum + (d[p] || 0), 0)) || 0])
-            .range([height, 0]);
-
-        const color = d3.scaleOrdinal()
-            .domain(providers)
-            .range(['#F59E0B', '#10B981', '#F59E0B']);
-
-        const stack = d3.stack().keys(providers);
-        const series = stack(data as any);
-
-        svg.append('g')
-            .selectAll('g')
-            .data(series)
-            .enter().append('g')
-            .attr('fill', d => color(d.key) as string)
-            .selectAll('rect')
-            .data(d => d)
-            .enter().append('rect')
-            .attr('x', d => x((d.data as any).service) || 0)
-            .attr('y', d => y(d[1]))
-            .attr('height', d => y(d[0]) - y(d[1]))
-            .attr('width', x.bandwidth())
-            .attr('rx', 2);
-
-        svg.append('g')
-            .attr('transform', `translate(0,${height})`)
-            .call(d3.axisBottom(x))
-            .selectAll('text')
-            .attr('transform', 'rotate(-45)')
-            .style('text-anchor', 'end')
-            .style('fill', '#4B5563');
-
-        svg.selectAll('.domain, .tick line')
-            .style('stroke', '#4B5563');
-
-        svg.append('g')
-            .call(d3.axisLeft(y).tickFormat(d => `$${d}`))
-            .selectAll('text')
-            .style('fill', '#4B5563');
-
-        svg.selectAll('.domain, .tick line')
-            .style('stroke', '#4B5563');
-
-        // Legend
-        const legend = svg.append('g')
-            .attr('transform', `translate(${width + 10}, 0)`);
-
-        providers.forEach((provider, i) => {
-            const g = legend.append('g')
-                .attr('transform', `translate(0, ${i * 20})`);
-
-            g.append('rect')
-                .attr('width', 15)
-                .attr('height', 15)
-                .attr('fill', color(provider) as string);
-
-            g.append('text')
-                .attr('x', 20)
-                .attr('y', 12)
-                .text(provider)
-                .style('font-size', '12px')
-                .style('fill', '#4B5563');
-        });
-    };
-
-    const renderForecastChart = () => {
-        if (!forecastRef.current) return;
-
-        const container = d3.select(forecastRef.current);
-        container.selectAll('*').remove();
-
-        // Group by date
-        const dateData = d3.rollup(
-            costs,
-            v => d3.sum(v, d => d.cost),
-            d => d.date
-        );
-
-        const historicalData = Array.from(dateData, ([date, cost]) => ({
-            date: new Date(date),
-            cost
-        })).sort((a, b) => a.date.getTime() - b.date.getTime());
-
-        // Simple linear forecast
-        const avgDailyCost = d3.mean(historicalData, d => d.cost) || 0;
-        const lastDate = historicalData[historicalData.length - 1]?.date || new Date();
-
-        const forecastData = [];
-        for (let i = 1; i <= 7; i++) {
-            const futureDate = new Date(lastDate);
-            futureDate.setDate(futureDate.getDate() + i);
-            forecastData.push({
-                date: futureDate,
-                cost: avgDailyCost * (1 + Math.random() * 0.1 - 0.05)
-            });
-        }
-
-        const allData = [...historicalData, ...forecastData];
-
-        const margin = { top: 20, right: 30, bottom: 40, left: 60 };
-        const width = 600 - margin.left - margin.right;
-        const height = 300 - margin.top - margin.bottom;
-
-        const svg = container.append('svg')
-            .attr('width', width + margin.left + margin.right)
-            .attr('height', height + margin.top + margin.bottom)
-            .append('g')
-            .attr('transform', `translate(${margin.left},${margin.top})`);
-
-        const x = d3.scaleTime()
-            .domain(d3.extent(allData, d => d.date) as [Date, Date])
-            .range([0, width]);
-
-        const y = d3.scaleLinear()
-            .domain([0, d3.max(allData, d => d.cost) || 0])
-            .range([height, 0]);
-
-        const line = d3.line<any>()
-            .x(d => x(d.date))
-            .y(d => y(d.cost))
-            .curve(d3.curveMonotoneX);
-
-        const area = d3.area<any>()
-            .x(d => x(d.date))
-            .y0(height)
-            .y1(d => y(d.cost))
-            .curve(d3.curveMonotoneX);
-
-        svg.append('path')
-            .datum(historicalData)
-            .attr('fill', 'rgba(30, 64, 175, 0.2)')
-            .attr('d', area);
-
-        svg.append('path')
-            .datum(historicalData)
-            .attr('fill', 'none')
-            .attr('stroke', '#F59E0B')
-            .attr('stroke-width', 2)
-            .attr('d', line);
-
-        svg.append('path')
-            .datum(forecastData)
-            .attr('fill', 'none')
-            .attr('stroke', '#F59E0B')
-            .attr('stroke-width', 2)
-            .attr('stroke-dasharray', '5,5')
-            .attr('d', line);
-
-        svg.append('g')
-            .attr('transform', `translate(0,${height})`)
-            .call(d3.axisBottom(x))
-            .selectAll('text')
-            .style('fill', '#4B5563');
-
-        svg.selectAll('.domain, .tick line')
-            .style('stroke', '#4B5563');
-
-        svg.append('g')
-            .call(d3.axisLeft(y).tickFormat(d => `$${d}`))
-            .selectAll('text')
-            .style('fill', '#4B5563');
-
-        svg.selectAll('.domain, .tick line')
-            .style('stroke', '#4B5563');
-    };
-
-    const renderHeatmap = () => {
-        if (!heatmapRef.current) return;
-
-        const container = d3.select(heatmapRef.current);
-        container.selectAll('*').remove();
-
-        // Group by date and provider
-        const heatmapData = d3.rollup(
-            costs,
-            v => d3.sum(v, d => d.cost),
-            d => d.date,
-            d => d.provider
-        );
-
-        const dates = Array.from(new Set(costs.map(c => c.date))).sort().slice(-14);
-        const providers = ['AWS', 'Azure', 'GCP'];
-
-        const data: any[] = [];
-        dates.forEach(date => {
-            providers.forEach(provider => {
-                data.push({
-                    date,
-                    provider,
-                    cost: heatmapData.get(date)?.get(provider) || 0
-                });
-            });
-        });
-
-        const margin = { top: 20, right: 30, bottom: 60, left: 60 };
-        const width = 600 - margin.left - margin.right;
-        const height = 200 - margin.top - margin.bottom;
-
-        const svg = container.append('svg')
-            .attr('width', width + margin.left + margin.right)
-            .attr('height', height + margin.top + margin.bottom)
-            .append('g')
-            .attr('transform', `translate(${margin.left},${margin.top})`);
-
-        const x = d3.scaleBand()
-            .range([0, width])
-            .domain(dates)
-            .padding(0.05);
-
-        const y = d3.scaleBand()
-            .range([0, height])
-            .domain(providers)
-            .padding(0.05);
-
-        const colorScale = d3.scaleSequential()
-            .interpolator(d3.interpolateBlues)
-            .domain([0, d3.max(data, d => d.cost) || 0]);
-
-        svg.selectAll()
-            .data(data)
-            .enter()
-            .append('rect')
-            .attr('x', d => x(d.date) || 0)
-            .attr('y', d => y(d.provider) || 0)
-            .attr('width', x.bandwidth())
-            .attr('height', y.bandwidth())
-            .style('fill', d => colorScale(d.cost))
-            .attr('rx', 2);
-
-        svg.append('g')
-            .attr('transform', `translate(0,${height})`)
-            .call(d3.axisBottom(x))
-            .selectAll('text')
-            .attr('transform', 'rotate(-45)')
-            .style('text-anchor', 'end')
-            .style('font-size', '10px')
-            .style('fill', '#4B5563');
-
-        svg.selectAll('.domain, .tick line')
-            .style('stroke', '#4B5563');
-
-        svg.append('g')
-            .call(d3.axisLeft(y))
-            .selectAll('text')
-            .style('fill', '#4B5563');
-
-        svg.selectAll('.domain, .tick line')
-            .style('stroke', '#4B5563');
-    };
-
-    const renderDonutChart = () => {
-        if (!donutRef.current) return;
-
-        const container = d3.select(donutRef.current);
-        container.selectAll('*').remove();
-
-        const envData = d3.rollup(
-            costs,
-            v => d3.sum(v, d => d.cost),
-            d => d.environment
-        );
-
-        const data = Array.from(envData, ([environment, cost]) => ({ environment, cost }));
-
-        const width = 400;
-        const height = 300;
-        const radius = Math.min(width - 120, height) / 2;
-
-        const svg = container.append('svg')
-            .attr('width', width)
-            .attr('height', height)
-            .append('g')
-            .attr('transform', `translate(${radius + 20},${height / 2})`);
-
-        const color = d3.scaleOrdinal()
-            .domain(data.map(d => d.environment))
-            .range(['#F59E0B', '#10B981', '#EC4899']);
-
-        const pie = d3.pie<any>()
-            .value(d => d.cost)
-            .sort(null);
-
-        const arc = d3.arc<any>()
-            .innerRadius(radius * 0.6)
-            .outerRadius(radius * 0.9);
-
-        const arcs = svg.selectAll('.arc')
-            .data(pie(data))
-            .enter()
-            .append('g')
-            .attr('class', 'arc');
-
-        arcs.append('path')
-            .attr('d', arc)
-            .attr('fill', d => color(d.data.environment) as string)
-            .attr('stroke', '#1F2937')
-            .attr('stroke-width', 2);
-
-        // Add legend on the side
-        const legend = container.select('svg').append('g')
-            .attr('transform', `translate(${radius * 2 + 60}, 80)`);
-
-        data.forEach((d, i) => {
-            const legendRow = legend.append('g')
-                .attr('transform', `translate(0, ${i * 30})`);
-
-            legendRow.append('rect')
-                .attr('width', 20)
-                .attr('height', 20)
-                .attr('fill', color(d.environment) as string)
-                .attr('rx', 4);
-
-            legendRow.append('text')
-                .attr('x', 30)
-                .attr('y', 15)
-                .attr('text-anchor', 'start')
-                .style('font-size', '14px')
-                .style('fill', '#D1D5DB')
-                .style('font-weight', '500')
-                .text(d.environment);
-
-            legendRow.append('text')
-                .attr('x', 30)
-                .attr('y', 15)
-                .attr('text-anchor', 'start')
-                .attr('dx', '120')
-                .style('font-size', '12px')
-                .style('fill', '#9CA3AF')
-                .text(`$${d.cost.toFixed(2)}`);
-        });
-    };
-
-    const renderGaugeChart = () => {
-        if (!gaugeRef.current) return;
-
-        const container = d3.select(gaugeRef.current);
-        container.selectAll('*').remove();
-
-        const totalCost = d3.sum(costs, d => d.cost);
-        const threshold = 5000;
-        const percentage = Math.min((totalCost / threshold) * 100, 100);
-
-        const width = 300;
-        const height = 200;
-        const radius = Math.min(width, height) / 2;
-
-        const svg = container.append('svg')
-            .attr('width', width)
-            .attr('height', height)
-            .append('g')
-            .attr('transform', `translate(${width / 2},${height - 20})`);
-
-        const arc = d3.arc<any>()
-            .innerRadius(radius * 0.7)
-            .outerRadius(radius)
-            .startAngle(-Math.PI / 2)
-            .endAngle(Math.PI / 2);
-
-        const backgroundArc = d3.arc<any>()
-            .innerRadius(radius * 0.7)
-            .outerRadius(radius)
-            .startAngle(-Math.PI / 2)
-            .endAngle(Math.PI / 2);
-
-        svg.append('path')
-            .attr('d', backgroundArc as any)
-            .attr('fill', '#4B5563');
-
-        const valueArc = d3.arc<any>()
-            .innerRadius(radius * 0.7)
-            .outerRadius(radius)
-            .startAngle(-Math.PI / 2)
-            .endAngle(-Math.PI / 2 + (Math.PI * percentage / 100));
-
-        svg.append('path')
-            .attr('d', valueArc as any)
-            .attr('fill', percentage > 80 ? '#EF4444' : percentage > 60 ? '#F59E0B' : '#10B981');
-
-        svg.append('text')
-            .attr('text-anchor', 'middle')
-            .attr('y', -20)
-            .style('font-size', '24px')
-            .style('font-weight', 'bold')
-            .style('fill', '#F3F4F6')
-            .text(`${percentage.toFixed(1)}%`);
-
-        svg.append('text')
-            .attr('text-anchor', 'middle')
-            .attr('y', 5)
-            .style('font-size', '14px')
-            .style('fill', '#4B5563')
-            .text(`$${totalCost.toFixed(2)} / $${threshold}`);
-    };
-
-    // Calculate anomaly
-    const calculateAnomaly = () => {
-        const today = new Date().toISOString().split('T')[0];
-        const todayCost = d3.sum(costs.filter(c => c.date === today), d => d.cost);
-
-        const historicalAvg = d3.mean(
-            Array.from(
-                d3.rollup(
-                    costs.filter(c => c.date !== today),
-                    v => d3.sum(v, d => d.cost),
-                    d => d.date
-                ).values()
-            )
-        ) || 0;
-
-        const percentChange = ((todayCost - historicalAvg) / historicalAvg) * 100;
-
+    if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#0F172A] text-white">Loading dashboard...</div>;
+
+    // --- Data Processing ---
+
+    // 1. Cost by Service (Top 10) - Horizontal Bar
+    const serviceData = Array.from(
+        d3.rollup(costs, v => Math.round(d3.sum(v, d => d.cost)), d => d.service)
+    ).map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 10);
+
+    // 2. Multi-Cloud Spend Comparison - Grouped Column
+    const groupedData = Array.from(
+        d3.rollup(costs, v => v, d => d.date) // Group by date first for x-axis
+    ).map(([date, entries]) => {
+        const providerCosts = d3.rollup(entries, v => Math.round(d3.sum(v, d => d.cost)), d => d.provider);
         return {
-            todayCost,
-            historicalAvg,
-            percentChange,
-            isAnomaly: Math.abs(percentChange) > 20
+            date,
+            AWS: providerCosts.get('AWS') || 0,
+            Azure: providerCosts.get('Azure') || 0,
+            GCP: providerCosts.get('GCP') || 0,
         };
-    };
+    }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+        .slice(-7); // Last 7 days for clarity
 
-    // Prepare table data
-    const getTableData = () => {
-        const grouped = d3.rollup(
-            costs,
-            v => d3.sum(v, d => d.cost),
-            d => d.provider,
-            d => d.service
-        );
+    // 3. Spending Forecast - Line Chart with Trend
+    const dailyTotal = Array.from(
+        d3.rollup(costs, v => Math.round(d3.sum(v, d => d.cost)), d => d.date)
+    ).map(([date, value]) => ({ date, value }))
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-        const tableData: any[] = [];
-        grouped.forEach((services, provider) => {
-            services.forEach((cost, service) => {
-                const historicalCost = cost * 0.9; // Simplified
-                const percentChange = ((cost - historicalCost) / historicalCost) * 100;
-
-                tableData.push({
-                    provider,
-                    service,
-                    totalCost: cost,
-                    percentChange,
-                    severity: Math.abs(percentChange) > 20 ? 'High' : Math.abs(percentChange) > 10 ? 'Medium' : 'Low'
-                });
-            });
+    // Simple linear forecast for next 7 days
+    const lastDay = dailyTotal[dailyTotal.length - 1];
+    const avgDaily = d3.mean(dailyTotal, d => d.value) || 0;
+    const forecastData = [...dailyTotal];
+    for (let i = 1; i <= 7; i++) {
+        const nextDate = new Date(lastDay.date);
+        nextDate.setDate(nextDate.getDate() + i);
+        forecastData.push({
+            date: nextDate.toISOString().split('T')[0],
+            value: Math.round(avgDaily * (1 + (Math.random() * 0.1 - 0.05))), // +/- 5% variation
+            isForecast: true
         });
+    }
 
-        return tableData.sort((a, b) => b.totalCost - a.totalCost);
+    // 4. Daily Cost Heatmap - Calendar Data
+    const heatmapData = Array.from(
+        d3.rollup(costs, v => Math.round(d3.sum(v, d => d.cost)), d => d.date)
+    ).map(([date, value]) => ({ date, value }))
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+        .slice(-14); // Last 14 days
+
+    // 5. Cost by Environment - Donut
+    const envData = Array.from(
+        d3.rollup(costs, v => Math.round(d3.sum(v, d => d.cost)), d => d.environment)
+    ).map(([name, value]) => ({ name, value }));
+
+    // 6. Budget Threshold Usage - Gauge Data
+    const totalCost = Math.round(d3.sum(costs, d => d.cost));
+    const budget = 5000; // Example budget
+    const budgetUsage = Math.min((totalCost / budget) * 100, 100);
+
+    // Custom Tooltip
+    const CustomTooltip = ({ active, payload, label }: any) => {
+        if (active && payload && payload.length) {
+            return (
+                <div className="bg-slate-800 border border-slate-700 p-3 rounded shadow-xl">
+                    <p className="text-slate-200 font-semibold mb-2">{label}</p>
+                    {payload.map((entry: any, index: number) => (
+                        <p key={index} style={{ color: entry.color }} className="text-sm">
+                            {entry.name}: ${Math.round(entry.value).toLocaleString()}
+                        </p>
+                    ))}
+                </div>
+            );
+        }
+        return null;
     };
-
-    if (loading) return <div className="p-8 text-center">Loading advanced dashboard...</div>;
-
-    const anomaly = calculateAnomaly();
-    const tableData = getTableData();
 
     return (
-        <div className="p-8 max-w-[1400px] mx-auto space-y-8 bg-gray-900 min-h-screen">
-            <h1 className="text-3xl font-bold text-white mb-8">Advanced Cost Analytics</h1>
+        <div className="min-h-screen p-8 bg-[#0F172A] text-slate-50 font-sans">
+            <div className="max-w-[1600px] mx-auto space-y-8">
 
-            {/* Anomaly Detection Card */}
-            <div className={`p-6 rounded-xl shadow-sm border ${anomaly.isAnomaly ? 'bg-red-900 border-red-700' : 'bg-gray-900 border-gray-700'}`}>
-                <h2 className="text-xl font-semibold mb-4 text-white">Anomaly Detection</h2>
-                <div className="grid grid-cols-3 gap-4">
-                    <div>
-                        <p className="text-sm text-gray-400">Today's Cost</p>
-                        <p className="text-2xl font-bold text-white">${anomaly.todayCost.toFixed(2)}</p>
+                <header className="mb-8">
+                    <h1 className="text-3xl font-bold tracking-tight text-white">Cloud Cost Intelligence</h1>
+                    <p className="text-slate-400 mt-1">Real-time financial visibility across your multi-cloud infrastructure</p>
+                </header>
+
+                {/* Top Row: Key Metrics (Placeholder for now, focusing on charts) */}
+
+                {/* Row 1: Service Breakdown & Multi-Cloud Comparison */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                    {/* 1. Cost by Service (Horizontal Bar) */}
+                    <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg">
+                        <h2 className="text-lg font-semibold mb-6 text-white flex items-center gap-2">
+                            <span className="w-1 h-6 bg-indigo-500 rounded-full"></span>
+                            Top 10 Services by Cost
+                        </h2>
+                        <div className="h-[350px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart layout="vertical" data={serviceData} margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke={COLORS.Grid} horizontal={false} />
+                                    <XAxis type="number" stroke={COLORS.TextSecondary} tickFormatter={(val) => `$${val}`} />
+                                    <YAxis type="category" dataKey="name" stroke={COLORS.TextSecondary} width={100} />
+                                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                                    <Bar dataKey="value" fill="#6366F1" radius={[0, 4, 4, 0]} barSize={20} name="Cost" />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
                     </div>
-                    <div>
-                        <p className="text-sm text-gray-400">Historical Average</p>
-                        <p className="text-2xl font-bold text-white">${anomaly.historicalAvg.toFixed(2)}</p>
+
+                    {/* 2. Multi-Cloud Spend (Grouped Column) */}
+                    <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg">
+                        <h2 className="text-lg font-semibold mb-6 text-white flex items-center gap-2">
+                            <span className="w-1 h-6 bg-blue-500 rounded-full"></span>
+                            Multi-Cloud Spend Comparison
+                        </h2>
+                        <div className="h-[350px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={groupedData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke={COLORS.Grid} vertical={false} />
+                                    <XAxis dataKey="date" stroke={COLORS.TextSecondary} tickFormatter={(val) => new Date(val).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })} />
+                                    <YAxis stroke={COLORS.TextSecondary} tickFormatter={(val) => `$${val}`} />
+                                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                                    <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                                    <Bar dataKey="AWS" fill={COLORS.AWS} radius={[4, 4, 0, 0]} name="AWS" />
+                                    <Bar dataKey="Azure" fill={COLORS.Azure} radius={[4, 4, 0, 0]} name="Azure" />
+                                    <Bar dataKey="GCP" fill={COLORS.GCP} radius={[4, 4, 0, 0]} name="GCP" />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
                     </div>
-                    <div>
-                        <p className="text-sm text-gray-400">Change</p>
-                        <p className={`text-2xl font-bold ${anomaly.percentChange > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                            {anomaly.percentChange > 0 ? '+' : ''}{anomaly.percentChange.toFixed(1)}%
-                        </p>
+                </div>
+
+                {/* Row 2: Forecast & Heatmap */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                    {/* 3. Spending Forecast (Line with Trend) - Spans 2 columns */}
+                    <div className="lg:col-span-2 bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg">
+                        <h2 className="text-lg font-semibold mb-6 text-white flex items-center gap-2">
+                            <span className="w-1 h-6 bg-emerald-500 rounded-full"></span>
+                            Spending Forecast (Next 7 Days)
+                        </h2>
+                        <div className="h-[350px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <ComposedChart data={forecastData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                                    <defs>
+                                        <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
+                                            <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" stroke={COLORS.Grid} vertical={false} />
+                                    <XAxis dataKey="date" stroke={COLORS.TextSecondary} tickFormatter={(val) => new Date(val).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })} />
+                                    <YAxis stroke={COLORS.TextSecondary} tickFormatter={(val) => `$${val}`} />
+                                    <Tooltip content={<CustomTooltip />} />
+                                    <Area type="monotone" dataKey="value" stroke="#10B981" fillOpacity={1} fill="url(#colorValue)" name="Total Cost" />
+                                    <Line type="monotone" dataKey="value" stroke="#10B981" strokeWidth={2} dot={false} activeDot={{ r: 6 }} strokeDasharray="5 5" />
+                                </ComposedChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+
+                    {/* 4. Daily Cost Heatmap (Calendar Style) */}
+                    <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg">
+                        <h2 className="text-lg font-semibold mb-6 text-white flex items-center gap-2">
+                            <span className="w-1 h-6 bg-purple-500 rounded-full"></span>
+                            Daily Cost Intensity
+                        </h2>
+                        <div className="grid grid-cols-7 gap-2 h-[350px] content-start">
+                            {heatmapData.map((day, i) => {
+                                const intensity = Math.min(day.value / 500, 1); // Normalize based on max expected cost
+                                return (
+                                    <div key={i} className="flex flex-col items-center gap-1 group relative">
+                                        <div
+                                            className="w-full aspect-square rounded-md transition-all duration-300 hover:scale-110 hover:z-10 cursor-pointer"
+                                            style={{
+                                                backgroundColor: `rgba(139, 92, 246, ${0.2 + intensity * 0.8})`, // Purple base
+                                                border: `1px solid rgba(139, 92, 246, ${0.3 + intensity * 0.7})`
+                                            }}
+                                        ></div>
+                                        <span className="text-[10px] text-slate-400">{new Date(day.date).getDate()}</span>
+
+                                        {/* Tooltip */}
+                                        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-slate-900 text-xs px-2 py-1 rounded border border-slate-700 opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-20">
+                                            ${day.value}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
-                {anomaly.isAnomaly && (
-                    <p className="mt-4 text-red-700 font-semibold">⚠️ Anomaly detected! Cost deviation exceeds 20%</p>
-                )}
-            </div>
 
-            {/* Charts Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Bar Chart */}
-                <div className="bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-700">
-                    <h2 className="text-xl font-semibold mb-4 text-white">Cost by Service (Top 10)</h2>
-                    <div ref={barChartRef}></div>
+                {/* Row 3: Environment & Budget */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                    {/* 5. Cost by Environment (Donut) */}
+                    <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg">
+                        <h2 className="text-lg font-semibold mb-6 text-white flex items-center gap-2">
+                            <span className="w-1 h-6 bg-amber-500 rounded-full"></span>
+                            Cost by Environment
+                        </h2>
+                        <div className="h-[300px] flex items-center justify-center">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={envData}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={80}
+                                        outerRadius={110}
+                                        paddingAngle={5}
+                                        dataKey="value"
+                                    >
+                                        {envData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={[COLORS.Prod, COLORS.Stage, COLORS.Dev, COLORS.Test][index % 4]} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip content={<CustomTooltip />} />
+                                    <Legend verticalAlign="middle" align="right" layout="vertical" iconType="circle" />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+
+                    {/* 6. Budget Threshold (Gauge) */}
+                    <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg">
+                        <h2 className="text-lg font-semibold mb-6 text-white flex items-center gap-2">
+                            <span className="w-1 h-6 bg-red-500 rounded-full"></span>
+                            Budget Usage
+                        </h2>
+                        <div className="h-[300px] flex flex-col items-center justify-center relative">
+                            {/* Custom SVG Gauge */}
+                            <svg viewBox="0 0 200 120" className="w-full h-full max-w-[300px]">
+                                {/* Background Arc */}
+                                <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke={COLORS.GaugeTrack} strokeWidth="20" strokeLinecap="round" />
+
+                                {/* Value Arc */}
+                                <path
+                                    d="M 20 100 A 80 80 0 0 1 180 100"
+                                    fill="none"
+                                    stroke={budgetUsage > 90 ? '#EF4444' : budgetUsage > 75 ? '#F59E0B' : '#10B981'}
+                                    strokeWidth="20"
+                                    strokeLinecap="round"
+                                    strokeDasharray="251.2" // Circumference of half circle (PI * 80)
+                                    strokeDashoffset={251.2 * (1 - budgetUsage / 100)}
+                                    className="transition-all duration-1000 ease-out"
+                                />
+
+                                {/* Text */}
+                                <text x="100" y="90" textAnchor="middle" fontSize="32" fontWeight="bold" fill="white">
+                                    {Math.round(budgetUsage)}%
+                                </text>
+                                <text x="100" y="115" textAnchor="middle" fontSize="12" fill={COLORS.TextSecondary}>
+                                    ${totalCost.toLocaleString()} / ${budget.toLocaleString()}
+                                </text>
+                            </svg>
+                        </div>
+                    </div>
                 </div>
 
-                {/* Stacked Bar Chart */}
-                <div className="bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-700">
-                    <h2 className="text-xl font-semibold mb-4 text-white">Multi-Cloud Spend Comparison</h2>
-                    <div ref={stackedBarRef}></div>
-                </div>
-
-                {/* Forecast Chart */}
-                <div className="bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-700">
-                    <h2 className="text-xl font-semibold mb-4 text-white">Spending Forecast (7 Days)</h2>
-                    <div ref={forecastRef}></div>
-                </div>
-
-                {/* Heatmap */}
-                <div className="bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-700">
-                    <h2 className="text-xl font-semibold mb-4 text-white">Daily Cost Heatmap (Last 14 Days)</h2>
-                    <div ref={heatmapRef}></div>
-                </div>
-
-                {/* Donut Chart */}
-                <div className="bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-700">
-                    <h2 className="text-xl font-semibold mb-4 text-white">Cost by Environment</h2>
-                    <div className="flex justify-center" ref={donutRef}></div>
-                </div>
-
-                {/* Gauge Chart */}
-                <div className="bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-700">
-                    <h2 className="text-xl font-semibold mb-4 text-white">Budget Threshold Usage</h2>
-                    <div className="flex justify-center" ref={gaugeRef}></div>
-                </div>
-            </div>
-
-            {/* Sortable Table */}
-            <div className="bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-700">
-                <h2 className="text-xl font-semibold mb-4 text-white">Detailed Cost Breakdown</h2>
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-800">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Provider</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Service</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Total Cost</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">% Change</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Severity</th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-gray-900 divide-y divide-gray-600">
-                            {tableData.map((row, idx) => (
-                                <tr key={idx} className="hover:bg-gray-800">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">{row.provider}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{row.service}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-white">${row.totalCost.toFixed(2)}</td>
-                                    <td className={`px-6 py-4 whitespace-nowrap text-sm font-semibold ${row.percentChange > 0 ? 'text-red-400' : 'text-green-400'}`}>
-                                        {row.percentChange > 0 ? '+' : ''}{row.percentChange.toFixed(1)}%
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className={`px-2 py-1 text-xs rounded-full font-medium ${row.severity === 'High' ? 'bg-red-500 text-white' :
-                                                row.severity === 'Medium' ? 'bg-yellow-600 text-white' :
-                                                    'bg-green-500 text-white'
-                                            }`}>
-                                            {row.severity}
-                                        </span>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
             </div>
         </div>
     );
