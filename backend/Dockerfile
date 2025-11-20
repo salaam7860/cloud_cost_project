@@ -1,0 +1,16 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the backend code into a subdirectory to maintain package structure
+COPY . /app/backend
+
+# Set PYTHONPATH to include /app so that 'backend' package is found
+ENV PYTHONPATH=/app
+
+EXPOSE 8000
+
+CMD ["fastapi", "run", "backend/main.py", "--port", "8000", "--host", "0.0.0.0"]

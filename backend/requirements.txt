@@ -1,0 +1,9 @@
+fastapi[standard]
+uvicorn
+sqlalchemy
+pydantic
+python-multipart
+azure-identity
+azure-mgmt-costmanagement
+google-cloud-billing
+
