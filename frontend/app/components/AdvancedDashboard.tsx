@@ -86,7 +86,7 @@ export default function AdvancedDashboard() {
             .attr('y', d => y(d.cost))
             .attr('width', x.bandwidth())
             .attr('height', d => height - y(d.cost))
-            .attr('fill', '#4F46E5')
+            .attr('fill', '#F59E0B')
             .attr('rx', 4);
 
         svg.append('g')
@@ -94,10 +94,19 @@ export default function AdvancedDashboard() {
             .call(d3.axisBottom(x))
             .selectAll('text')
             .attr('transform', 'rotate(-45)')
-            .style('text-anchor', 'end');
+            .style('text-anchor', 'end')
+            .style('fill', '#4B5563');
+
+        svg.selectAll('.domain, .tick line')
+            .style('stroke', '#4B5563');
 
         svg.append('g')
-            .call(d3.axisLeft(y).tickFormat(d => `$${d}`));
+            .call(d3.axisLeft(y).tickFormat(d => `$${d}`))
+            .selectAll('text')
+            .style('fill', '#4B5563');
+
+        svg.selectAll('.domain, .tick line')
+            .style('stroke', '#4B5563');
     };
 
     const renderStackedBarChart = () => {
@@ -146,7 +155,7 @@ export default function AdvancedDashboard() {
 
         const color = d3.scaleOrdinal()
             .domain(providers)
-            .range(['#3B82F6', '#10B981', '#F59E0B']);
+            .range(['#F59E0B', '#10B981', '#F59E0B']);
 
         const stack = d3.stack().keys(providers);
         const series = stack(data as any);
@@ -170,10 +179,19 @@ export default function AdvancedDashboard() {
             .call(d3.axisBottom(x))
             .selectAll('text')
             .attr('transform', 'rotate(-45)')
-            .style('text-anchor', 'end');
+            .style('text-anchor', 'end')
+            .style('fill', '#4B5563');
+
+        svg.selectAll('.domain, .tick line')
+            .style('stroke', '#4B5563');
 
         svg.append('g')
-            .call(d3.axisLeft(y).tickFormat(d => `$${d}`));
+            .call(d3.axisLeft(y).tickFormat(d => `$${d}`))
+            .selectAll('text')
+            .style('fill', '#4B5563');
+
+        svg.selectAll('.domain, .tick line')
+            .style('stroke', '#4B5563');
 
         // Legend
         const legend = svg.append('g')
@@ -192,7 +210,8 @@ export default function AdvancedDashboard() {
                 .attr('x', 20)
                 .attr('y', 12)
                 .text(provider)
-                .style('font-size', '12px');
+                .style('font-size', '12px')
+                .style('fill', '#4B5563');
         });
     };
 
@@ -261,13 +280,13 @@ export default function AdvancedDashboard() {
 
         svg.append('path')
             .datum(historicalData)
-            .attr('fill', 'rgba(79, 70, 229, 0.2)')
+            .attr('fill', 'rgba(30, 64, 175, 0.2)')
             .attr('d', area);
 
         svg.append('path')
             .datum(historicalData)
             .attr('fill', 'none')
-            .attr('stroke', '#4F46E5')
+            .attr('stroke', '#F59E0B')
             .attr('stroke-width', 2)
             .attr('d', line);
 
@@ -281,10 +300,20 @@ export default function AdvancedDashboard() {
 
         svg.append('g')
             .attr('transform', `translate(0,${height})`)
-            .call(d3.axisBottom(x));
+            .call(d3.axisBottom(x))
+            .selectAll('text')
+            .style('fill', '#4B5563');
+
+        svg.selectAll('.domain, .tick line')
+            .style('stroke', '#4B5563');
 
         svg.append('g')
-            .call(d3.axisLeft(y).tickFormat(d => `$${d}`));
+            .call(d3.axisLeft(y).tickFormat(d => `$${d}`))
+            .selectAll('text')
+            .style('fill', '#4B5563');
+
+        svg.selectAll('.domain, .tick line')
+            .style('stroke', '#4B5563');
     };
 
     const renderHeatmap = () => {
@@ -356,10 +385,19 @@ export default function AdvancedDashboard() {
             .selectAll('text')
             .attr('transform', 'rotate(-45)')
             .style('text-anchor', 'end')
-            .style('font-size', '10px');
+            .style('font-size', '10px')
+            .style('fill', '#4B5563');
+
+        svg.selectAll('.domain, .tick line')
+            .style('stroke', '#4B5563');
 
         svg.append('g')
-            .call(d3.axisLeft(y));
+            .call(d3.axisLeft(y))
+            .selectAll('text')
+            .style('fill', '#4B5563');
+
+        svg.selectAll('.domain, .tick line')
+            .style('stroke', '#4B5563');
     };
 
     const renderDonutChart = () => {
@@ -376,19 +414,19 @@ export default function AdvancedDashboard() {
 
         const data = Array.from(envData, ([environment, cost]) => ({ environment, cost }));
 
-        const width = 300;
+        const width = 400;
         const height = 300;
-        const radius = Math.min(width, height) / 2;
+        const radius = Math.min(width - 120, height) / 2;
 
         const svg = container.append('svg')
             .attr('width', width)
             .attr('height', height)
             .append('g')
-            .attr('transform', `translate(${width / 2},${height / 2})`);
+            .attr('transform', `translate(${radius + 20},${height / 2})`);
 
         const color = d3.scaleOrdinal()
             .domain(data.map(d => d.environment))
-            .range(['#3B82F6', '#10B981', '#F59E0B']);
+            .range(['#F59E0B', '#10B981', '#EC4899']);
 
         const pie = d3.pie<any>()
             .value(d => d.cost)
@@ -407,15 +445,41 @@ export default function AdvancedDashboard() {
         arcs.append('path')
             .attr('d', arc)
             .attr('fill', d => color(d.data.environment) as string)
-            .attr('stroke', 'white')
+            .attr('stroke', '#1F2937')
             .attr('stroke-width', 2);
 
-        arcs.append('text')
-            .attr('transform', d => `translate(${arc.centroid(d)})`)
-            .attr('text-anchor', 'middle')
-            .style('font-size', '12px')
-            .style('fill', 'white')
-            .text(d => d.data.environment);
+        // Add legend on the side
+        const legend = container.select('svg').append('g')
+            .attr('transform', `translate(${radius * 2 + 60}, 80)`);
+
+        data.forEach((d, i) => {
+            const legendRow = legend.append('g')
+                .attr('transform', `translate(0, ${i * 30})`);
+
+            legendRow.append('rect')
+                .attr('width', 20)
+                .attr('height', 20)
+                .attr('fill', color(d.environment) as string)
+                .attr('rx', 4);
+
+            legendRow.append('text')
+                .attr('x', 30)
+                .attr('y', 15)
+                .attr('text-anchor', 'start')
+                .style('font-size', '14px')
+                .style('fill', '#D1D5DB')
+                .style('font-weight', '500')
+                .text(d.environment);
+
+            legendRow.append('text')
+                .attr('x', 30)
+                .attr('y', 15)
+                .attr('text-anchor', 'start')
+                .attr('dx', '120')
+                .style('font-size', '12px')
+                .style('fill', '#9CA3AF')
+                .text(`$${d.cost.toFixed(2)}`);
+        });
     };
 
     const renderGaugeChart = () => {
@@ -452,7 +516,7 @@ export default function AdvancedDashboard() {
 
         svg.append('path')
             .attr('d', backgroundArc as any)
-            .attr('fill', '#E5E7EB');
+            .attr('fill', '#4B5563');
 
         const valueArc = d3.arc<any>()
             .innerRadius(radius * 0.7)
@@ -469,13 +533,14 @@ export default function AdvancedDashboard() {
             .attr('y', -20)
             .style('font-size', '24px')
             .style('font-weight', 'bold')
+            .style('fill', '#F3F4F6')
             .text(`${percentage.toFixed(1)}%`);
 
         svg.append('text')
             .attr('text-anchor', 'middle')
             .attr('y', 5)
             .style('font-size', '14px')
-            .style('fill', '#6B7280')
+            .style('fill', '#4B5563')
             .text(`$${totalCost.toFixed(2)} / $${threshold}`);
     };
 
@@ -538,23 +603,23 @@ export default function AdvancedDashboard() {
     const tableData = getTableData();
 
     return (
-        <div className="p-8 max-w-[1400px] mx-auto space-y-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Advanced Cost Analytics</h1>
+        <div className="p-8 max-w-[1400px] mx-auto space-y-8 bg-gray-900 min-h-screen">
+            <h1 className="text-3xl font-bold text-white mb-8">Advanced Cost Analytics</h1>
 
             {/* Anomaly Detection Card */}
-            <div className={`p-6 rounded-xl shadow-sm border ${anomaly.isAnomaly ? 'bg-red-50 border-red-200' : 'bg-white dark:bg-gray-800 border-gray-100'}`}>
-                <h2 className="text-xl font-semibold mb-4">Anomaly Detection</h2>
+            <div className={`p-6 rounded-xl shadow-sm border ${anomaly.isAnomaly ? 'bg-red-900 border-red-700' : 'bg-gray-900 border-gray-700'}`}>
+                <h2 className="text-xl font-semibold mb-4 text-white">Anomaly Detection</h2>
                 <div className="grid grid-cols-3 gap-4">
                     <div>
-                        <p className="text-sm text-gray-500">Today's Cost</p>
-                        <p className="text-2xl font-bold">${anomaly.todayCost.toFixed(2)}</p>
+                        <p className="text-sm text-gray-400">Today's Cost</p>
+                        <p className="text-2xl font-bold text-white">${anomaly.todayCost.toFixed(2)}</p>
                     </div>
                     <div>
-                        <p className="text-sm text-gray-500">Historical Average</p>
-                        <p className="text-2xl font-bold">${anomaly.historicalAvg.toFixed(2)}</p>
+                        <p className="text-sm text-gray-400">Historical Average</p>
+                        <p className="text-2xl font-bold text-white">${anomaly.historicalAvg.toFixed(2)}</p>
                     </div>
                     <div>
-                        <p className="text-sm text-gray-500">Change</p>
+                        <p className="text-sm text-gray-400">Change</p>
                         <p className={`text-2xl font-bold ${anomaly.percentChange > 0 ? 'text-red-600' : 'text-green-600'}`}>
                             {anomaly.percentChange > 0 ? '+' : ''}{anomaly.percentChange.toFixed(1)}%
                         </p>
@@ -568,69 +633,69 @@ export default function AdvancedDashboard() {
             {/* Charts Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Bar Chart */}
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100">
-                    <h2 className="text-xl font-semibold mb-4">Cost by Service (Top 10)</h2>
+                <div className="bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-700">
+                    <h2 className="text-xl font-semibold mb-4 text-white">Cost by Service (Top 10)</h2>
                     <div ref={barChartRef}></div>
                 </div>
 
                 {/* Stacked Bar Chart */}
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100">
-                    <h2 className="text-xl font-semibold mb-4">Multi-Cloud Spend Comparison</h2>
+                <div className="bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-700">
+                    <h2 className="text-xl font-semibold mb-4 text-white">Multi-Cloud Spend Comparison</h2>
                     <div ref={stackedBarRef}></div>
                 </div>
 
                 {/* Forecast Chart */}
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100">
-                    <h2 className="text-xl font-semibold mb-4">Spending Forecast (7 Days)</h2>
+                <div className="bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-700">
+                    <h2 className="text-xl font-semibold mb-4 text-white">Spending Forecast (7 Days)</h2>
                     <div ref={forecastRef}></div>
                 </div>
 
                 {/* Heatmap */}
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100">
-                    <h2 className="text-xl font-semibold mb-4">Daily Cost Heatmap (Last 14 Days)</h2>
+                <div className="bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-700">
+                    <h2 className="text-xl font-semibold mb-4 text-white">Daily Cost Heatmap (Last 14 Days)</h2>
                     <div ref={heatmapRef}></div>
                 </div>
 
                 {/* Donut Chart */}
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100">
-                    <h2 className="text-xl font-semibold mb-4">Cost by Environment</h2>
+                <div className="bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-700">
+                    <h2 className="text-xl font-semibold mb-4 text-white">Cost by Environment</h2>
                     <div className="flex justify-center" ref={donutRef}></div>
                 </div>
 
                 {/* Gauge Chart */}
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100">
-                    <h2 className="text-xl font-semibold mb-4">Budget Threshold Usage</h2>
+                <div className="bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-700">
+                    <h2 className="text-xl font-semibold mb-4 text-white">Budget Threshold Usage</h2>
                     <div className="flex justify-center" ref={gaugeRef}></div>
                 </div>
             </div>
 
             {/* Sortable Table */}
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100">
-                <h2 className="text-xl font-semibold mb-4">Detailed Cost Breakdown</h2>
+            <div className="bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-700">
+                <h2 className="text-xl font-semibold mb-4 text-white">Detailed Cost Breakdown</h2>
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50 dark:bg-gray-700">
+                        <thead className="bg-gray-800">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Provider</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Cost</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">% Change</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Severity</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Provider</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Service</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Total Cost</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">% Change</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Severity</th>
                             </tr>
                         </thead>
-                        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200">
+                        <tbody className="bg-gray-900 divide-y divide-gray-600">
                             {tableData.map((row, idx) => (
-                                <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{row.provider}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm">{row.service}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold">${row.totalCost.toFixed(2)}</td>
-                                    <td className={`px-6 py-4 whitespace-nowrap text-sm font-semibold ${row.percentChange > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                <tr key={idx} className="hover:bg-gray-800">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">{row.provider}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{row.service}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-white">${row.totalCost.toFixed(2)}</td>
+                                    <td className={`px-6 py-4 whitespace-nowrap text-sm font-semibold ${row.percentChange > 0 ? 'text-red-400' : 'text-green-400'}`}>
                                         {row.percentChange > 0 ? '+' : ''}{row.percentChange.toFixed(1)}%
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className={`px-2 py-1 text-xs rounded-full ${row.severity === 'High' ? 'bg-red-100 text-red-800' :
-                                                row.severity === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
-                                                    'bg-green-100 text-green-800'
+                                        <span className={`px-2 py-1 text-xs rounded-full font-medium ${row.severity === 'High' ? 'bg-red-500 text-white' :
+                                                row.severity === 'Medium' ? 'bg-yellow-600 text-white' :
+                                                    'bg-green-500 text-white'
                                             }`}>
                                             {row.severity}
                                         </span>
