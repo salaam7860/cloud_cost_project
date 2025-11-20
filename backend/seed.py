@@ -1,5 +1,6 @@
 from .database import SessionLocal, engine, Base
 from .models import CostEntry, AlertThreshold
+from .generate_recommendations import create_recommendations_in_db
 from datetime import date, timedelta
 import random
 
@@ -51,8 +52,14 @@ def seed_data():
         db.add(AlertThreshold(amount=1000.0))
 
     db.commit()
+    
+    # Generate optimization recommendations
+    print("Generating optimization recommendations...")
+    create_recommendations_in_db(db)
+    
     db.close()
     print("Data seeded successfully.")
 
 if __name__ == "__main__":
     seed_data()
+

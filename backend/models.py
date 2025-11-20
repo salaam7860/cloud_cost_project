@@ -29,3 +29,16 @@ class Budget(Base):
     amount = Column(Float)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
+class Optimization(Base):
+    __tablename__ = "optimizations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, index=True)
+    description = Column(String)
+    estimated_savings = Column(Float)
+    status = Column(String, default="pending")  # pending, applied, ignored
+    service = Column(String, index=True)
+    provider = Column(String, index=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+

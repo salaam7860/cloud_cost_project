@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Home, DollarSign, Bell, BarChart3, Cloud } from 'lucide-react';
+import { Home, DollarSign, Bell, BarChart3, Cloud, TrendingUp } from 'lucide-react';
 import { FaAws } from 'react-icons/fa';
 import { SiGooglecloud } from 'react-icons/si';
 import Link from 'next/link';
@@ -16,6 +16,7 @@ export default function Sidebar({ activeView, onViewChange, onAlertClick }: Side
     const menuItems = [
         { id: 'dashboard', label: 'Dashboard', icon: Home },
         { id: 'budget', label: 'Budget Planning', icon: DollarSign },
+        { id: 'optimization', label: 'Cost Optimization', icon: TrendingUp },
         { id: 'aws', label: 'AWS', icon: FaAws },
         { id: 'azure', label: 'Azure', icon: Cloud },
         { id: 'gcp', label: 'GCP', icon: SiGooglecloud },

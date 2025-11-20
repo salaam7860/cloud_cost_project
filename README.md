@@ -11,6 +11,7 @@ A comprehensive multi-cloud cost tracking and analytics platform that helps you 
 - **Multi-Cloud Support**: Track costs across AWS, Azure, and GCP in a unified dashboard
 - **Real-time Monitoring**: Live cost tracking with automatic data aggregation
 - **Budget Planning**: Set monthly budgets, track spending, and receive forecasts
+- **Cost Optimization**: AI-powered recommendations to reduce cloud spending
 - **Cost Alerts**: Set custom thresholds and receive warnings when spending exceeds limits
 - **Advanced Analytics**: Comprehensive visualizations powered by D3.js and Recharts
 
@@ -38,6 +39,15 @@ A comprehensive multi-cloud cost tracking and analytics platform that helps you 
 - **Service Breakdown**: Detailed table showing daily spend and monthly projections per service
 - **Budget Alerts**: Automatic warnings when spending exceeds 80% of budget
 - **Real-time Forecasting**: Predict end-of-month spending based on current trends
+
+#### Cost Optimization Dashboard
+- **Intelligent Recommendations**: AI-powered analysis of spending patterns to identify cost-saving opportunities
+- **5 Optimization Types**: Idle resources, right-sizing, reserved instances, multi-cloud consolidation, dev environment optimization
+- **Savings Tracking**: Monitor potential savings vs applied savings with visual charts
+- **Action Management**: Apply or ignore recommendations with one-click actions
+- **Status Indicators**: Color-coded badges (pending/applied/ignored) for easy tracking
+- **Positive Feedback**: Automatic alerts when savings opportunities exceed 15% of monthly spend
+- **Visual Analytics**: Bar and pie charts showing savings overview and recommendation status distribution
 
 ### Cloud Provider Integration
 - **AWS Cost Explorer**: Fetch real-time cost data from AWS
@@ -182,6 +192,18 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 | created_at | DateTime | Budget creation timestamp |
 | updated_at | DateTime | Last update timestamp |
 
+### Optimization
+| Field | Type | Description |
+|-------|------|-------------|
+| id | Integer | Primary key |
+| title | String | Recommendation title |
+| description | String | Detailed description |
+| estimated_savings | Float | Potential savings amount |
+| status | String | Status (pending/applied/ignored) |
+| service | String | Related cloud service |
+| provider | String | Cloud provider (AWS/Azure/GCP) |
+| created_at | DateTime | Creation timestamp |
+
 ## 🔌 API Endpoints
 
 ### Costs
@@ -197,6 +219,13 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
   - Returns: budget amount, current spend, remaining balance, forecasted spend, percentage used, and service-level projections
 - `POST /budget` - Set or update monthly budget
   - Body: `{"amount": 5000}`
+
+### Optimization
+- `GET /optimization` - Get all optimization recommendations with summary statistics
+  - Returns: recommendations list, total estimated savings, applied savings, counts by status, savings percentage
+- `POST /optimization/{id}/apply` - Mark a recommendation as applied
+- `POST /optimization/{id}/ignore` - Mark a recommendation as ignored
+- `POST /optimization/generate` - Generate new recommendations based on spending patterns
 
 ## 🌐 Cloud Provider Integration
 
@@ -251,6 +280,19 @@ Uses historical data to predict future spending trends:
 - Automatic warnings at 80% budget consumption
 - Daily spend tracking with monthly projections
 
+### Cost Optimization
+- Intelligent analysis of spending patterns across 30 days
+- 5 types of optimization recommendations:
+  - **Idle Resources**: Identify and remove minimal-usage resources (80% savings)
+  - **Right-sizing**: Downsize underutilized instances (30% savings)
+  - **Reserved Instances**: Switch to reserved pricing for consistent workloads (40% savings)
+  - **Multi-Cloud Consolidation**: Consolidate to single provider for volume discounts (15% savings)
+  - **Dev Environment Optimization**: Auto-shutdown during non-business hours (50% savings)
+- Apply or ignore recommendations with one-click actions
+- Real-time tracking of applied savings
+- Visual analytics with bar and pie charts
+- Positive feedback alerts when savings ≥ 15% of monthly spend
+
 ### Cost Alerts
 - Set custom spending thresholds
 - Visual warnings when limits are exceeded
@@ -286,13 +328,15 @@ cloud-cost-insight/
 │   │   ├── __init__.py
 │   │   ├── costs.py
 │   │   ├── alerts.py
-│   │   └── budget.py
+│   │   ├── budget.py
+│   │   └── optimization.py
 │   ├── __init__.py
 │   ├── database.py
 │   ├── models.py
 │   ├── schemas.py
 │   ├── main.py
 │   ├── seed.py
+│   ├── generate_recommendations.py
 │   ├── fetch_aws_costs.py
 │   ├── fetch_azure_costs.py
 │   ├── fetch_gcp_costs.py
@@ -307,6 +351,8 @@ cloud-cost-insight/
 │   │   │   ├── AdvancedDashboard.tsx
 │   │   │   └── Sidebar.tsx
 │   │   ├── budget/
+│   │   │   └── page.tsx
+│   │   ├── optimization/
 │   │   │   └── page.tsx
 │   │   ├── api.ts
 │   │   ├── layout.tsx
@@ -369,6 +415,7 @@ Project Link: [https://github.com/salaam7860/cloud_cost_project](https://github.
 - [ ] Create mobile app
 - [ ] Add Slack/Email notifications
 - [x] Implement budget planning features
+- [x] Implement cost optimization recommendations
 - [ ] Create cost allocation by teams/departments
 - [ ] Add custom tagging and filtering
 - [ ] Implement role-based access control (RBAC)

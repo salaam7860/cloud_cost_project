@@ -48,9 +48,12 @@ export default function BudgetPlanning() {
         if (view === 'budget') {
             // Already on budget page, do nothing
             return;
+        } else if (view === 'optimization') {
+            router.push('/optimization');
+        } else {
+            // Navigate back to home for all other views
+            router.push('/');
         }
-        // Navigate back to home for all other views
-        router.push('/');
     };
 
     const getStatusColor = (status: string) => {

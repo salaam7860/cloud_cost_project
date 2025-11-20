@@ -93,3 +93,63 @@ export async function setBudget(amount: number): Promise<Budget> {
   return res.json();
 }
 
+export interface Optimization {
+  id: number;
+  title: string;
+  description: string;
+  estimated_savings: number;
+  status: string;
+  service: string;
+  provider: string;
+  created_at: string;
+}
+
+export interface OptimizationResponse {
+  optimizations: Optimization[];
+  total_estimated_savings: number;
+  total_applied_savings: number;
+  pending_count: number;
+  applied_count: number;
+  ignored_count: number;
+  savings_percentage: number;
+}
+
+export async function fetchOptimizations(): Promise<OptimizationResponse> {
+  const res = await fetch(`${API_URL}/optimization/`);
+  if (!res.ok) {
+    throw new Error('Failed to fetch optimizations');
+  }
+  return res.json();
+}
+
+export async function applyOptimization(id: number): Promise<Optimization> {
+  const res = await fetch(`${API_URL}/optimization/${id}/apply`, {
+    method: 'POST',
+  });
+  if (!res.ok) {
+    throw new Error('Failed to apply optimization');
+  }
+  return res.json();
+}
+
+export async function ignoreOptimization(id: number): Promise<Optimization> {
+  const res = await fetch(`${API_URL}/optimization/${id}/ignore`, {
+    method: 'POST',
+  });
+  if (!res.ok) {
+    throw new Error('Failed to ignore optimization');
+  }
+  return res.json();
+}
+
+export async function generateOptimizations(): Promise<{ message: string }> {
+  const res = await fetch(`${API_URL}/optimization/generate`, {
+    method: 'POST',
+  });
+  if (!res.ok) {
+    throw new Error('Failed to generate optimizations');
+  }
+  return res.json();
+}
+
+

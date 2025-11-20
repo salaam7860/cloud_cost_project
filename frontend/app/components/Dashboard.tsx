@@ -63,6 +63,8 @@ export default function DashboardWithSidebar() {
     const handleViewChange = (view: string) => {
         if (view === 'budget') {
             router.push('/budget');
+        } else if (view === 'optimization') {
+            router.push('/optimization');
         } else {
             setActiveView(view);
         }
