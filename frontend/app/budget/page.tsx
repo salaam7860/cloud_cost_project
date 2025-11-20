@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { fetchBudget, setBudget, BudgetResponse } from '../api';
 import { DollarSign, TrendingUp, TrendingDown, AlertCircle, Wallet } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 
 export default function BudgetPlanning() {
+    const router = useRouter();
     const [budgetData, setBudgetData] = useState<BudgetResponse | null>(null);
     const [newBudget, setNewBudget] = useState<string>('');
     const [loading, setLoading] = useState(true);
@@ -42,6 +44,15 @@ export default function BudgetPlanning() {
         }
     };
 
+    const handleViewChange = (view: string) => {
+        if (view === 'budget') {
+            // Already on budget page, do nothing
+            return;
+        }
+        // Navigate back to home for all other views
+        router.push('/');
+    };
+
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'green': return 'text-emerald-400 bg-emerald-900/30';
@@ -60,7 +71,7 @@ export default function BudgetPlanning() {
     if (loading) {
         return (
             <div className="flex h-screen bg-gray-900">
-                <Sidebar activeView={activeView} onViewChange={setActiveView} onAlertClick={() => { }} />
+                <Sidebar activeView={activeView} onViewChange={handleViewChange} onAlertClick={() => { }} />
                 <div className="flex-1 flex items-center justify-center">
                     <p className="text-gray-400">Loading budget data...</p>
                 </div>
@@ -76,7 +87,7 @@ export default function BudgetPlanning() {
 
     return (
         <div className="flex h-screen bg-gray-900">
-            <Sidebar activeView={activeView} onViewChange={setActiveView} onAlertClick={() => { }} />
+            <Sidebar activeView={activeView} onViewChange={handleViewChange} onAlertClick={() => { }} />
 
             <div className="flex-1 overflow-auto bg-gray-900">
                 <div className="p-8 max-w-[1600px] mx-auto space-y-8">
